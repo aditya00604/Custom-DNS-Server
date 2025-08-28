@@ -1,20 +1,17 @@
 #!/bin/bash
 
-# Ultra-Fast DNS Server Build Script
-# This script compiles the C++ DNS server with maximum performance optimizations
-
 set -e
 
 echo "Building Ultra-Fast C++ DNS Server..."
 
-# Compiler settings for maximum performance
+
 CXX=${CXX:-g++}
 CXXFLAGS="-std=c++17 -O3 -march=native -mtune=native -flto -DNDEBUG"
 CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-parameter -pthread"
 CXXFLAGS="$CXXFLAGS -ffast-math -funroll-loops -finline-functions"
 CXXFLAGS="$CXXFLAGS -fomit-frame-pointer -pipe"
 
-# Additional performance flags for modern CPUs
+
 if command -v lscpu >/dev/null 2>&1; then
     CPU_INFO=$(lscpu)
     if echo "$CPU_INFO" | grep -q "avx2"; then
@@ -27,14 +24,14 @@ if command -v lscpu >/dev/null 2>&1; then
     fi
 fi
 
-# Link-time optimization
+
 LDFLAGS="-flto -pthread"
 
 echo "Compiler: $CXX"
 echo "Flags: $CXXFLAGS"
 echo "Linker flags: $LDFLAGS"
 
-# Compile
+
 echo "Compiling..."
 $CXX $CXXFLAGS -c dns_server.cpp -o dns_server.o
 $CXX $CXXFLAGS -c main.cpp -o main.o
@@ -42,38 +39,35 @@ $CXX $CXXFLAGS -c main.cpp -o main.o
 echo "Linking..."
 $CXX $LDFLAGS dns_server.o main.o -o ultra_fast_dns_server
 
-# Strip symbols for production
+
 echo "Stripping debug symbols..."
 strip ultra_fast_dns_server
 
-# Check binary size
+
 SIZE=$(du -h ultra_fast_dns_server | cut -f1)
 echo "Binary size: $SIZE"
 
-# Set performance settings
-echo "Setting performance optimizations..."
 
-# Make executable
+echo "Setting performance optimizations..."
 chmod +x ultra_fast_dns_server
 
-# Check for performance tuning capabilities
 if [ "$EUID" -eq 0 ]; then
     echo "Running as root - applying system performance tunings..."
     
-    # Set CPU governor to performance (if available)
+    
     if [ -d /sys/devices/system/cpu/cpufreq ]; then
         echo "Setting CPU governor to performance..."
         echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor >/dev/null 2>&1 || true
     fi
     
-    # Increase network buffer limits
+    
     echo "Optimizing network buffers..."
     echo 16777216 > /proc/sys/net/core/rmem_max 2>/dev/null || true
     echo 16777216 > /proc/sys/net/core/wmem_max 2>/dev/null || true
     echo 16777216 > /proc/sys/net/core/rmem_default 2>/dev/null || true
     echo 16777216 > /proc/sys/net/core/wmem_default 2>/dev/null || true
     
-    # Set nice priority
+    
     echo "Build complete. You can run with high priority using:"
     echo "  nice -n -20 ./ultra_fast_dns_server [port]"
 else
